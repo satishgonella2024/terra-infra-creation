@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
+        AWS_ACCESS_KEY_ID = credentials('aws-credentials') // Replace with your Jenkins AWS credentials ID
+        AWS_SECRET_ACCESS_KEY = credentials('aws-credentials')
     }
 
     parameters {
@@ -12,24 +12,14 @@ pipeline {
             choices: ['create', 'destroy'],
             description: 'Choose whether to create or destroy the infrastructure.'
         )
+        booleanParam(name: 'CREATE_KEY', defaultValue: true, description: 'Create SSH key pair')
     }
+
 
     stages {
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'git@github.com:satishgonella2024/terra-infra-creation.git'
-            }
-        }
-
-        stage('Setup SSH Key') {
-            steps {
-                sh '''
-                if [ -f /var/lib/jenkins/.ssh/wordpress-key ]; then
-                    echo "Key already exists, skipping generation."
-                else
-                    ssh-keygen -t rsa -b 2048 -f /var/lib/jenkins/.ssh/wordpress-key -N ""
-                fi
-                '''
             }
         }
 
@@ -52,15 +42,7 @@ pipeline {
 
         stage('Plan Infrastructure') {
             steps {
-                script {
-                    def planOutput = sh(
-                        script: 'terraform plan -var-file=environments/dev/terraform.tfvars',
-                        returnStatus: true
-                    )
-                    if (planOutput != 0) {
-                        error("Terraform Plan failed. Check logs.")
-                    }
-                }
+                sh 'terraform plan -var-file=environments/dev/terraform.tfvars'
             }
         }
 
@@ -92,16 +74,25 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            archiveArtifacts artifacts: '**/terraform.tfstate', fingerprint: true
-        }
-        success {
-            echo 'Infrastructure deployment successful. Ready for application deployment.'
-        }
-        failure {
-            echo 'Infrastructure deployment failed.'
-        }
     }
+post {
+    always {
+        archiveArtifacts artifacts: '**/terraform.tfstate', fingerprint: true
+        // writeFile file: 'infra-output.json', text: '''
+        // {
+        //   "app_dns": "your-alb-dns.amazonaws.com",
+        //   "app_port": "80"
+        // }
+        // '''
+        // archiveArtifacts artifacts: 'infra-output.json'
+    }
+    success {
+        echo 'Infrastructure deployment successful. Ready for application deployment.'
+    }
+    failure {
+        echo 'Infrastructure deployment failed.'
+    }
+}
+
+ 
 }
