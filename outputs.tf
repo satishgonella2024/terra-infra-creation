@@ -1,23 +1,3 @@
-### outputs.tf
-
-# Network Module Outputs
-output "vpc_id" {
-  description = "The ID of the VPC"
-  value       = module.network.vpc_id
-}
-
-output "public_subnet_ids" {
-  description = "The IDs of the public subnets"
-  value       = module.network.public_subnet_ids
-}
-
-# Security Module Outputs
-output "web_security_group_id" {
-  description = "The ID of the web security group"
-  value       = module.security.web_sg_id
-}
-
-# Compute Module Outputs
 output "launch_template_id" {
   description = "The ID of the launch template for the compute module"
   value       = module.compute.launch_template_id
@@ -28,7 +8,6 @@ output "autoscaling_group_name" {
   value       = module.compute.autoscaling_group_name
 }
 
-# Load Balancer Module Outputs
 output "load_balancer_dns" {
   description = "The DNS name of the load balancer"
   value       = module.load_balancer.lb_dns_name
