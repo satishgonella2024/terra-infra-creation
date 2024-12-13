@@ -43,15 +43,18 @@ pipeline {
         }
     }
 
-    post {
-        always {
+ post {
+    always {
+        script {
             archiveArtifacts artifacts: '**/terraform.tfstate', fingerprint: true
         }
-        success {
-            echo 'Infrastructure deployment successful.'
-        }
-        failure {
-            echo 'Infrastructure deployment failed.'
-        }
     }
+    success {
+        echo 'Infrastructure deployment successful.'
+    }
+    failure {
+        echo 'Infrastructure deployment failed.'
+    }
+}
+
 }
