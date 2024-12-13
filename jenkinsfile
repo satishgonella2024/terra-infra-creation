@@ -42,19 +42,24 @@ pipeline {
             }
         }
     }
-
- post {
+post {
     always {
-        script {
-            archiveArtifacts artifacts: '**/terraform.tfstate', fingerprint: true
+        archiveArtifacts artifacts: '**/terraform.tfstate', fingerprint: true
+        writeFile file: 'infra-output.json', text: '''
+        {
+          "app_dns": "your-alb-dns.amazonaws.com",
+          "app_port": "80"
         }
+        '''
+        archiveArtifacts artifacts: 'infra-output.json'
     }
     success {
-        echo 'Infrastructure deployment successful.'
+        echo 'Infrastructure deployment successful. Ready for application deployment.'
     }
     failure {
         echo 'Infrastructure deployment failed.'
     }
 }
 
+ 
 }
