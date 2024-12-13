@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'eu-west-2'
+        TF_VAR_file = 'environments/dev/terraform.tfvars'
+        TF_BACKEND_BUCKET = 'terraform-state-bucket-eg'
+        TF_BACKEND_KEY = 'terra-wordpress/terraform.tfstate'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', credentialsId: 'your-github-ssh-id', url: 'git@github.com:satishgonella2024/terra-infra-creation.git'
+            }
+        }
+
+        stage('Initialize Terraform') {
+            steps {
+                sh """
+                terraform init \
+                    -backend-config="bucket=${TF_BACKEND_BUCKET}" \
+                    -backend-config="key=${TF_BACKEND_KEY}" \
+                    -backend-config="region=${AWS_REGION}"
+                """
+            }
+        }
+
+        stage('Validate Terraform') {
+            steps {
+                sh "terraform validate"
+            }
+        }
+
+        stage('Plan Infrastructure') {
+            steps {
+                sh "terraform plan -var-file=${TF_VAR_file} -out=tfplan"
+            }
+        }
+
+        stage('Apply Changes') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh "terraform apply -auto-approve tfplan"
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: '**/*.tfstate', allowEmptyArchive: true
+        }
+        success {
+            echo 'Infrastructure deployment succeeded!'
+        }
+        failure {
+            echo 'Infrastructure deployment failed.'
+        }
+    }
+}

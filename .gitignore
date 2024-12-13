@@ -1,0 +1,10 @@
+# Terraform State
+*.tfstate
+*.tfstate.backup
+
+# Terraform Directories
+.terraform/
+.terraform.lock.hcl
+
+# Logs
+*.log
